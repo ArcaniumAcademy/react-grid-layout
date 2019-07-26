@@ -24,6 +24,7 @@ type GridItemCallback<Data: GridDragEvent | GridResizeEvent> = (
 
 type State = {
   resizing: ?{ width: number, height: number },
+  resizingLeft: boolean,
   dragging: ?{ top: number, left: number },
   className: string
 };
@@ -157,6 +158,7 @@ export default class GridItem extends React.Component<Props, State> {
 
   state: State = {
     resizing: null,
+    resizingLeft: false,
     dragging: null,
     className: ""
   };
@@ -207,13 +209,17 @@ export default class GridItem extends React.Component<Props, State> {
     if (state && state.resizing) {
       out.width = Math.round(state.resizing.width);
       out.height = Math.round(state.resizing.height);
-      if (state.resizing.left) {
+      //console.log("OUTLEFT", out.left);
+      /*if (state.resizing.left) {
         out.left = state.resizing.left;
-      }
+        //console.log(out.left);
+      }*/
     }
 
     if (state && state.dragging) {
-      out.top = Math.round(state.dragging.top);
+      if (!state.resizing) {
+        out.top = Math.round(state.dragging.top);
+      }
       out.left = Math.round(state.dragging.left);
     }
 
@@ -251,14 +257,17 @@ export default class GridItem extends React.Component<Props, State> {
    * Given a height and width in pixel values, calculate grid units.
    * @param  {Number} height Height in pixels.
    * @param  {Number} width  Width in pixels.
+   * @param  {Boolean} leftResize  True if dragging on left side.
    * @return {Object} w, h as grid units.
    */
   calcWH({
     height,
-    width
+    width,
+    leftResize
   }: {
     height: number,
-    width: number
+    width: number,
+    leftResize: boolean
   }): { w: number, h: number } {
     const { margin, maxRows, cols, rowHeight, x, y } = this.props;
     const colWidth = this.calcColWidth();
@@ -339,10 +348,12 @@ export default class GridItem extends React.Component<Props, State> {
     position: Position
   ): ReactElement<any> {
     const { cols, x, minW, minH, maxW, maxH } = this.props;
-
     // This is the max possible width - doesn't go to infinity because of the width of the window
-    const maxWidth = this.calcPosition(0, 0, cols - x, 0).width;
-
+    let maxWidth = this.calcPosition(0, 0, cols - x, 0).width;
+    if (this.state.resizingLeft) {
+      const widthInCols = Math.round(position.width / this.calcColWidth());
+      maxWidth = this.calcPosition(0, 0, x + widthInCols, 0).width;
+    }
     // Calculate min/max constraints using our min & maxes
     const mins = this.calcPosition(0, 0, minW, minH);
     const maxes = this.calcPosition(0, 0, maxW, maxH);
@@ -377,12 +388,10 @@ export default class GridItem extends React.Component<Props, State> {
    */
   onDragHandler(handlerName: string) {
     return (e: Event, { node, deltaX, deltaY }: ReactDraggableCallbackData) => {
-      console.log(deltaX);
       const handler = this.props[handlerName];
       if (!handler) return;
 
       const newPosition: PartialPosition = { top: 0, left: 0 };
-
       // Get new XY
       switch (handlerName) {
         case "onDragStart": {
@@ -437,19 +446,14 @@ export default class GridItem extends React.Component<Props, State> {
       e: Event,
       { node, size }: { node: HTMLElement, size: Position }
     ) => {
-      let side = "east";
-      if (node.classList.contains("react-resizable-handle-e")) {
-        side = "east";
-      } else if (node.classList.contains("react-resizable-handle-w")) {
-        side = "west";
-      }
+      const leftResize = node.classList.contains("react-resizable-handle-w");
 
       const handler = this.props[handlerName];
       if (!handler) return;
+
       const { cols, x, i, maxW, minW, maxH, minH } = this.props;
       // Get new XY
       let { w, h } = this.calcWH(size);
-
       // Cap w at numCols
       w = Math.min(w, cols - x);
       // Ensure w is at least 1
@@ -459,22 +463,66 @@ export default class GridItem extends React.Component<Props, State> {
       w = Math.max(Math.min(w, maxW), minW);
       h = Math.max(Math.min(h, maxH), minH);
 
-      if (side === "west") {
-        const { margin, containerPadding, rowHeight } = this.props;
-        const colWidth = this.calcColWidth();
-        const left = Math.round(
-          (colWidth + margin[0]) * x + containerPadding[0]
-        );
-        const oldWidth = this.state.resizing
-          ? this.state.resizing.width
-          : w * colWidth + margin[0];
-        const difference = oldWidth - size.width;
-        size.left = left + difference;
+      if (leftResize) {
+        const item = node.offsetParent;
+        const layout = item.offsetParent;
+        if (!layout || !item) return;
+        const layoutRect = layout.getBoundingClientRect();
+        const clientRect = item.getBoundingClientRect();
+        const newPosition: PartialPosition = {
+          top: clientRect.top - layoutRect.top + layout.scrollTop,
+          left: 0
+        };
+        const prevWidth = node.parentElement.offsetWidth;
+        const deltaX = prevWidth - size.width;
+
+        let leftHandlerName;
+        if (handlerName === "onResizeStart") {
+          leftHandlerName = "onDragStart";
+          newPosition.left =
+            clientRect.left - layoutRect.left + layout.scrollLeft;
+          newPosition.top = clientRect.top - layoutRect.top + layout.scrollTop;
+          this.setState({
+            dragging: newPosition,
+            resizing: size,
+            resizingLeft: true
+          });
+        }
+
+        if (handlerName === "onResize") {
+          leftHandlerName = "onDrag";
+          if (!this.state.dragging)
+            throw new Error("onDrag called before onDragStart.");
+          newPosition.left = this.state.dragging.left + deltaX;
+          this.setState({
+            dragging: newPosition,
+            resizing: size
+          });
+        }
+
+        if (handlerName === "onResizeStop") {
+          leftHandlerName = "onDragStop";
+          if (!this.state.dragging)
+            throw new Error("onDragEnd called before onDragStart.");
+          newPosition.left = this.state.dragging.left;
+          newPosition.top = this.state.dragging.top;
+          this.setState({
+            dragging: null,
+            resizing: null,
+            resizingLeft: false
+          });
+        }
+        const leftHandler = this.props[leftHandlerName];
+        const { x, y } = this.calcXY(newPosition.top, newPosition.left);
+        const newNode = node.offsetParent;
+        //leftHandler.call(this, this.props.i, x, y, { e, newNode, newPosition });
+      } else {
+        this.setState({
+          resizing: handlerName === "onResizeStop" ? null : size
+        });
+        //handler.call(this, i, w, h, { e, node, size });
       }
-
-      this.setState({ resizing: handlerName === "onResizeStop" ? null : size });
-
-      // handler.call(this, i, w, h, { e, node, size });
+      //handler.call(this, i, w, h, { e, node, size });
     };
   }
 

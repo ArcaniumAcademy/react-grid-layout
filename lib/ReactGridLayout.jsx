@@ -518,6 +518,18 @@ export default class ReactGridLayout extends React.Component<Props, State> {
     this.onLayoutMaybeChanged(newLayout, oldLayout);
   }
 
+  onLeftResizeStart() {
+    console.log("left resize start");
+  }
+
+  onLeftResize() {
+    console.log("left resize");
+  }
+
+  onLeftResizeStop() {
+    console.log("left resize stop");
+  }
+
   /**
    * Create a placeholder object.
    * @return {Element} Placeholder div.
@@ -607,6 +619,9 @@ export default class ReactGridLayout extends React.Component<Props, State> {
         onResizeStart={this.onResizeStart}
         onResize={this.onResize}
         onResizeStop={this.onResizeStop}
+        onLeftResizeStart={this.onLeftResizeStart}
+        onLeftResize={this.onLeftResize}
+        onLeftResizeStop={this.onLeftResizeStop}
         isDraggable={draggable}
         isResizable={resizable}
         useCSSTransforms={useCSSTransforms && mounted}
