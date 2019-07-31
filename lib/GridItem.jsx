@@ -24,7 +24,7 @@ type GridItemCallback<Data: GridDragEvent | GridResizeEvent> = (
 
 type State = {
   resizing: ?{ width: number, height: number },
-  resizingLeft: boolean,
+  onLeftHandle: boolean,
   startingPositionLeft: number,
   dragging: ?{ top: number, left: number },
   className: string
@@ -163,7 +163,7 @@ export default class GridItem extends React.Component<Props, State> {
 
   state: State = {
     resizing: null,
-    resizingLeft: false,
+    onLeftHandle: false,
     dragging: null,
     className: ""
   };
@@ -267,7 +267,7 @@ export default class GridItem extends React.Component<Props, State> {
     width: number
   }): { w: number, h: number } {
     const { margin, maxRows, cols, rowHeight, x, y } = this.props;
-    const { resizingLeft } = this.state;
+    const { onLeftHandle } = this.state;
     const colWidth = this.calcColWidth();
 
     // width = colWidth * w - (margin * (w - 1))
@@ -277,7 +277,7 @@ export default class GridItem extends React.Component<Props, State> {
     let h = Math.round((height + margin[1]) / (rowHeight + margin[1]));
 
     // Capping
-    const maxWidth = resizingLeft ? x + w : cols - x;
+    const maxWidth = onLeftHandle ? x + w : cols - x;
     w = Math.max(Math.min(w, maxWidth), 1);
     h = Math.max(Math.min(h, maxRows - y), 1);
     return { w, h };
@@ -349,12 +349,12 @@ export default class GridItem extends React.Component<Props, State> {
     const { cols, x, minW, minH, maxW, maxH } = this.props;
 
     // This is the max possible width - doesn't go to infinity because of the width of the window
-    const { resizingLeft } = this.state;
+    const { onLeftHandle } = this.state;
     const widthInCols = this.calcWH({
       height: position.height,
       width: position.width
     }).w;
-    const maxWidthInCols = resizingLeft ? x + widthInCols : cols - x;
+    const maxWidthInCols = onLeftHandle ? x + widthInCols : cols - x;
     const maxWidth = this.calcPosition(0, 0, maxWidthInCols, 0).width;
 
     // Calculate min/max constraints using our min & maxes
@@ -495,14 +495,19 @@ export default class GridItem extends React.Component<Props, State> {
           };
           this.setState({
             dragging: position,
-            resizingLeft: onLeftHandle,
+            onLeftHandle,
             startingPosition
           });
           return handler.call(this, i, w, h, gridResizeEvent);
         case "onResize":
           if (!dragging) throw new Error("onDrag called before onDragStart.");
           const {
-            startingPosition: { left: startingLeft, width: startingWidth }
+            startingPosition: {
+              left: startingLeft,
+              height: startingHeight,
+              top: startingTop,
+              width: startingWidth
+            }
           } = this.state;
 
           // Set left with capping
@@ -524,17 +529,28 @@ export default class GridItem extends React.Component<Props, State> {
             size,
             position
           };
-          const { w: resizeWidth } = this.calcWH({
+          const { w: resizeW } = this.calcWH({
             height: size.height,
             width: size.width
           });
-          const { x, y } = this.calcXY(position.top, position.left);
+
+          // check with startingRight. calcXY(position.top, position.left) results in jank.
+          const { x: startingLeftX, y } = this.calcXY(
+            startingTop,
+            startingLeft
+          );
+          const { w: startingW } = this.calcWH({
+            height: startingHeight,
+            width: startingWidth
+          });
+          const resizeX = startingLeftX + startingW - resizeW;
+
           return handler.call(
             this,
             i,
-            resizeWidth,
+            resizeW,
             h,
-            x,
+            resizeX,
             y,
             gridResizeLeftEvent
           );
@@ -544,7 +560,7 @@ export default class GridItem extends React.Component<Props, State> {
 
           this.setState({
             dragging: null,
-            resizingLeft: false
+            onLeftHandle: false
           });
 
           // calculate snapped size and position
@@ -601,7 +617,7 @@ export default class GridItem extends React.Component<Props, State> {
 
     const pos = this.calcPosition(x, y, w, h, this.state);
     const child = React.Children.only(this.props.children);
-
+    const { dragging, onLeftHandle } = this.state;
     // Create the child element. We clone the existing element but modify its className and style.
     let newChild = React.cloneElement(child, {
       className: classNames(
@@ -612,7 +628,7 @@ export default class GridItem extends React.Component<Props, State> {
           static: this.props.static,
           resizing: Boolean(this.state.resizing),
           "react-draggable": isDraggable,
-          "react-draggable-dragging": Boolean(this.state.dragging),
+          "react-draggable-dragging": Boolean(dragging),
           cssTransforms: useCSSTransforms
         }
       ),
