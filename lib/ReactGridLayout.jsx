@@ -462,7 +462,7 @@ export default class ReactGridLayout extends React.Component<Props, State> {
     if (!l) return;
 
     // Something like quad tree should be used to find collisions faster
-    /*let hasCollisions;
+    let hasCollisions;
     if (preventCollision) {
       const collisions = getAllCollisions(layout, { ...l, w, h }).filter(
         layoutItem => layoutItem.i !== l.i
@@ -488,7 +488,7 @@ export default class ReactGridLayout extends React.Component<Props, State> {
       // Set new width and height.
       l.w = w;
       l.h = h;
-    }*/
+    }
 
     // Create placeholder (display only)
     var placeholder = {

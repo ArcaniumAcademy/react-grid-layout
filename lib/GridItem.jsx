@@ -68,7 +68,6 @@ type Props = {
   onResizeStart?: GridItemCallback<GridResizeEvent>,
   onResizeStop?: GridItemCallback<GridResizeEvent>,
   onResizeLeft?: GridItemCallback<GridResizeEvent>,
-  onResizeLeftStart?: GridItemCallback<GridResizeEvent>,
   onResizeLeftStop?: GridItemCallback<GridResizeEvent>
 };
 
@@ -134,7 +133,6 @@ export default class GridItem extends React.Component<Props, State> {
     onResizeStart: PropTypes.func,
     onResize: PropTypes.func,
     onResizeLeftStop: PropTypes.func,
-    onResizeLeftStart: PropTypes.func,
     onResizeLeft: PropTypes.func,
 
     // Flags
@@ -216,11 +214,6 @@ export default class GridItem extends React.Component<Props, State> {
     if (state && state.resizing) {
       out.width = Math.round(state.resizing.width);
       out.height = Math.round(state.resizing.height);
-      //console.log("OUTLEFT", out.left);
-      /*if (state.resizing.left) {
-        out.left = state.resizing.left;
-        //console.log(out.left);
-      }*/
     }
 
     if (state && state.dragging) {
@@ -285,8 +278,8 @@ export default class GridItem extends React.Component<Props, State> {
 
     // Capping
     const maxWidth = resizingLeft ? x + w : cols - x;
-    w = Math.max(Math.min(w, maxWidth), 1); // 0);
-    h = Math.max(Math.min(h, maxRows - y), 1); // 0);
+    w = Math.max(Math.min(w, maxWidth), 1);
+    h = Math.max(Math.min(h, maxRows - y), 1);
     return { w, h };
   }
 
