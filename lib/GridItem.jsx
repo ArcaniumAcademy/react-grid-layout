@@ -488,25 +488,32 @@ export default class GridItem extends React.Component<Props, State> {
       const { dragging } = this.state;
       switch (handlerName) {
         case "onResizeStart":
-          const startingPosition = {
+          const { x: startX, y } = this.calcXY(position.top, position.left);
+          const { w: startW } = this.calcWH({
+            height: clientRect.height,
+            width: clientRect.width
+          });
+          const startingPositionLeft = {
             ...position,
             width: clientRect.width,
-            height: clientRect.height
+            height: clientRect.height,
+            w: startW,
+            x: startX
           };
           this.setState({
             dragging: position,
             onLeftHandle,
-            startingPosition
+            startingPositionLeft
           });
           return handler.call(this, i, w, h, gridResizeEvent);
         case "onResize":
           if (!dragging) throw new Error("onDrag called before onDragStart.");
           const {
-            startingPosition: {
+            startingPositionLeft: {
               left: startingLeft,
-              height: startingHeight,
-              top: startingTop,
-              width: startingWidth
+              width: startingWidth,
+              x: startingX,
+              w: startingW
             }
           } = this.state;
 
@@ -534,16 +541,8 @@ export default class GridItem extends React.Component<Props, State> {
             width: size.width
           });
 
-          // check with startingRight. calcXY(position.top, position.left) results in jank.
-          const { x: startingLeftX, y } = this.calcXY(
-            startingTop,
-            startingLeft
-          );
-          const { w: startingW } = this.calcWH({
-            height: startingHeight,
-            width: startingWidth
-          });
-          const resizeX = startingLeftX + startingW - resizeW;
+          // Pin the right edge. resizeX + resizeW === startingX + startingW.
+          const resizeX = startingX + startingW - resizeW;
 
           return handler.call(
             this,

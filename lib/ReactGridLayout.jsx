@@ -688,7 +688,6 @@ export default class ReactGridLayout extends React.Component<Props, State> {
       useCSSTransforms
     } = this.props;
 
-    console.log(activeDrag);
     // {...this.state.activeDrag} is pretty slow, actually
     return (
       <GridItem
