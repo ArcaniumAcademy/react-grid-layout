@@ -248,8 +248,10 @@ export default class ReactGridLayout extends React.Component<Props, State> {
       "onDrag",
       "onDragStop",
       "onResizeStart",
+      "onResizeLeft",
       "onResize",
-      "onResizeStop"
+      "onResizeStop",
+      "onResizeLeftStop"
     ]);
   }
 
@@ -321,7 +323,12 @@ export default class ReactGridLayout extends React.Component<Props, State> {
    * @param {Event} e The mousedown event
    * @param {Element} node The current dragging DOM element
    */
-  onDragStart(i: string, x: number, y: number, { e, node }: GridDragEvent) {
+  onDragStart(
+    i: string,
+    x: number,
+    y: number,
+    { e, node, position }: GridDragEvent
+  ) {
     const { layout } = this.state;
     var l = getLayoutItem(layout, i);
     if (!l) return;
@@ -342,7 +349,12 @@ export default class ReactGridLayout extends React.Component<Props, State> {
    * @param {Event} e The mousedown event
    * @param {Element} node The current dragging DOM element
    */
-  onDrag(i: string, x: number, y: number, { e, node }: GridDragEvent) {
+  onDrag(
+    i: string,
+    x: number,
+    y: number,
+    { e, node, position }: GridDragEvent
+  ) {
     const { oldDragItem } = this.state;
     let { layout } = this.state;
     const { cols } = this.props;
@@ -388,7 +400,12 @@ export default class ReactGridLayout extends React.Component<Props, State> {
    * @param {Event} e The mousedown event
    * @param {Element} node The current dragging DOM element
    */
-  onDragStop(i: string, x: number, y: number, { e, node }: GridDragEvent) {
+  onDragStop(
+    i: string,
+    x: number,
+    y: number,
+    { e, node, position }: GridDragEvent
+  ) {
     const { oldDragItem } = this.state;
     let { layout } = this.state;
     const { cols, preventCollision } = this.props;
@@ -430,7 +447,132 @@ export default class ReactGridLayout extends React.Component<Props, State> {
     }
   }
 
-  onResizeStart(i: string, w: number, h: number, { e, node }: GridResizeEvent) {
+  onResizeLeft(
+    i: string,
+    w: number,
+    h: number,
+    x: number,
+    y: number,
+    { e, node, size, position }: GridResizeLeftEvent
+  ) {
+    const { oldResizeItem } = this.state;
+    let { layout } = this.state;
+    const { cols, preventCollision } = this.props;
+    const l: ?LayoutItem = getLayoutItem(layout, i);
+    if (!l) return;
+
+    // Something like quad tree should be used to find collisions faster
+    /*let hasCollisions;
+    if (preventCollision) {
+      const collisions = getAllCollisions(layout, { ...l, w, h }).filter(
+        layoutItem => layoutItem.i !== l.i
+      );
+      hasCollisions = collisions.length > 0;
+
+      // If we're colliding, we need to adjust the placeholder.
+      if (hasCollisions) {
+        // adjust w && h to maximum allowed space
+        let leastX = Infinity,
+          leastY = Infinity;
+        collisions.forEach(layoutItem => {
+          if (layoutItem.x > l.x) leastX = Math.min(leastX, layoutItem.x);
+          if (layoutItem.y > l.y) leastY = Math.min(leastY, layoutItem.y);
+        });
+
+        if (Number.isFinite(leastX)) l.w = leastX - l.x;
+        if (Number.isFinite(leastY)) l.h = leastY - l.y;
+      }
+    }
+
+    if (!hasCollisions) {
+      // Set new width and height.
+      l.w = w;
+      l.h = h;
+    }*/
+
+    // Create placeholder (display only)
+    var placeholder = {
+      w: w,
+      h: l.h,
+      x: l.x,
+      y: l.y,
+      placeholder: true, // drag
+      static: true, // resize
+      i: i
+    };
+
+    // Move the element to the dragged location.
+    const isUserAction = true;
+    layout = moveElement(
+      layout,
+      l,
+      x,
+      y,
+      isUserAction,
+      this.props.preventCollision,
+      this.compactType(),
+      cols
+    );
+
+    // Re-compact the layout and set the drag placeholder.
+    this.setState({
+      layout: compact(layout, this.compactType(), cols),
+      activeDrag: placeholder
+    });
+
+    return this.props.onResize(layout, oldResizeItem, l, placeholder, e, node);
+  }
+
+  onResizeLeftStop(
+    i: string,
+    w: number,
+    h: number,
+    x: number,
+    y: number,
+    { e, node, size, position }: GridResizeLeftEvent
+  ) {
+    const { oldResizeItem, preventCollision } = this.state;
+    let { layout } = this.state;
+    const { cols } = this.props;
+    const l = getLayoutItem(layout, i);
+    if (!l) return;
+
+    // Adjust element width
+    l.w = w;
+
+    // Move the element here
+    const isUserAction = true;
+    layout = moveElement(
+      layout,
+      l,
+      x,
+      y,
+      isUserAction,
+      preventCollision,
+      this.compactType(),
+      cols
+    );
+
+    // Set state
+    const newLayout = compact(layout, this.compactType(), cols);
+    const { oldLayout } = this.state;
+    this.setState({
+      activeDrag: null,
+      layout: newLayout,
+      oldDragItem: null,
+      oldLayout: null
+    });
+
+    this.onLayoutMaybeChanged(newLayout, oldLayout);
+    return this.props.onResizeStop(layout, oldResizeItem, l, null, e, node);
+  }
+
+  onResizeStart(
+    i: string,
+    w: number,
+    h: number,
+    { e, node, size }: GridResizeEvent
+  ) {
     const { layout } = this.state;
     var l = getLayoutItem(layout, i);
     if (!l) return;
@@ -443,7 +585,12 @@ export default class ReactGridLayout extends React.Component<Props, State> {
     this.props.onResizeStart(layout, l, l, null, e, node);
   }
 
-  onResize(i: string, w: number, h: number, { e, node }: GridResizeEvent) {
+  onResize(
+    i: string,
+    w: number,
+    h: number,
+    { e, node, size }: GridResizeEvent
+  ) {
     const { layout, oldResizeItem } = this.state;
     const { cols, preventCollision } = this.props;
     const l: ?LayoutItem = getLayoutItem(layout, i);
@@ -498,7 +645,12 @@ export default class ReactGridLayout extends React.Component<Props, State> {
     });
   }
 
-  onResizeStop(i: string, w: number, h: number, { e, node }: GridResizeEvent) {
+  onResizeStop(
+    i: string,
+    w: number,
+    h: number,
+    { e, node, size }: GridResizeEvent
+  ) {
     const { layout, oldResizeItem } = this.state;
     const { cols } = this.props;
     var l = getLayoutItem(layout, i);
@@ -516,18 +668,6 @@ export default class ReactGridLayout extends React.Component<Props, State> {
     });
 
     this.onLayoutMaybeChanged(newLayout, oldLayout);
-  }
-
-  onLeftResizeStart() {
-    console.log("left resize start");
-  }
-
-  onLeftResize() {
-    console.log("left resize");
-  }
-
-  onLeftResizeStop() {
-    console.log("left resize stop");
   }
 
   /**
@@ -619,9 +759,9 @@ export default class ReactGridLayout extends React.Component<Props, State> {
         onResizeStart={this.onResizeStart}
         onResize={this.onResize}
         onResizeStop={this.onResizeStop}
-        onLeftResizeStart={this.onLeftResizeStart}
-        onLeftResize={this.onLeftResize}
-        onLeftResizeStop={this.onLeftResizeStop}
+        onResizeLeftStart={this.onResizeStart}
+        onResizeLeft={this.onResizeLeft}
+        onResizeLeftStop={this.onResizeLeftStop}
         isDraggable={draggable}
         isResizable={resizable}
         useCSSTransforms={useCSSTransforms && mounted}
