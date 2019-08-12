@@ -71,6 +71,59 @@ type Props = {
   onResizeLeftStop?: GridItemCallback<GridResizeEvent>
 };
 
+// Helper for generating column width
+function calcColWidth(props: {
+  margin: [number, number],
+  containerPadding: [number, number],
+  containerWidth: number,
+  cols: number
+}): number {
+  const { margin, containerPadding, containerWidth, cols } = props;
+  return (
+    (containerWidth - margin[0] * (cols - 1) - containerPadding[0] * 2) / cols
+  );
+}
+
+/**
+ * Translate x and y coordinates from pixels to grid units.
+ * @param  {Number} top  Top position (relative to parent) in pixels.
+ * @param  {Number} left Left position (relative to parent) in pixels.
+ * @return {Object} x and y in grid units.
+ */
+export function calcXY(
+  top: number,
+  left: number,
+  props: {
+    cols: number,
+    containerWidth: number,
+    margin: [number, number],
+    containerPadding: [number, number],
+    rowHeight: number,
+    maxRows: number,
+    w: number,
+    h: number
+  }
+): { x: number, y: number } {
+  const { margin, cols, rowHeight, w, h, maxRows } = props;
+  const colWidth = calcColWidth(props);
+
+  // left = colWidth * x + margin * (x + 1)
+  // l = cx + m(x+1)
+  // l = cx + mx + m
+  // l - m = cx + mx
+  // l - m = x(c + m)
+  // (l - m) / (c + m) = x
+  // x = (left - margin) / (coldWidth + margin)
+  let x = Math.round((left - margin[0]) / (colWidth + margin[0]));
+  let y = Math.round((top - margin[1]) / (rowHeight + margin[1]));
+
+  // Capping
+  x = Math.max(Math.min(x, cols - w), 0);
+  y = Math.max(Math.min(y, maxRows - h), 0);
+
+  return { x, y };
+}
+
 /**
  * An individual item within a ReactGridLayout.
  */
@@ -168,14 +221,6 @@ export default class GridItem extends React.Component<Props, State> {
     className: ""
   };
 
-  // Helper for generating column width
-  calcColWidth(): number {
-    const { margin, containerPadding, containerWidth, cols } = this.props;
-    return (
-      (containerWidth - margin[0] * (cols - 1) - containerPadding[0] * 2) / cols
-    );
-  }
-
   /**
    * Return position on the page given an x, y, w, h.
    * left, top, width, height are all in pixels.
@@ -193,7 +238,7 @@ export default class GridItem extends React.Component<Props, State> {
     state: ?Object
   ): Position {
     const { margin, containerPadding, rowHeight } = this.props;
-    const colWidth = this.calcColWidth();
+    const colWidth = calcColWidth(this.props);
 
     const out = {
       left: Math.round((colWidth + margin[0]) * x + containerPadding[0]),
@@ -224,33 +269,6 @@ export default class GridItem extends React.Component<Props, State> {
     }
 
     return out;
-  }
-
-  /**
-   * Translate x and y coordinates from pixels to grid units.
-   * @param  {Number} top  Top position (relative to parent) in pixels.
-   * @param  {Number} left Left position (relative to parent) in pixels.
-   * @return {Object} x and y in grid units.
-   */
-  calcXY(top: number, left: number): { x: number, y: number } {
-    const { margin, cols, rowHeight, w, h, maxRows } = this.props;
-    const colWidth = this.calcColWidth();
-
-    // left = colWidth * x + margin * (x + 1)
-    // l = cx + m(x+1)
-    // l = cx + mx + m
-    // l - m = cx + mx
-    // l - m = x(c + m)
-    // (l - m) / (c + m) = x
-    // x = (left - margin) / (coldWidth + margin)
-    let x = Math.round((left - margin[0]) / (colWidth + margin[0]));
-    let y = Math.round((top - margin[1]) / (rowHeight + margin[1]));
-
-    // Capping
-    x = Math.max(Math.min(x, cols - w), 0);
-    y = Math.max(Math.min(y, maxRows - h), 0);
-
-    return { x, y };
   }
 
   /**
