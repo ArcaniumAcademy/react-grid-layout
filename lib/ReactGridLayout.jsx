@@ -263,7 +263,7 @@ export default class ReactGridLayout extends React.Component<Props, State> {
     let dragInfo = null;
 
     this.props.dragApiRef.value = {
-      dragIn: ({ i, w, h, node, event, position }) => {
+      dragIn: ({ i, w, h, node, event, position, ...data }) => {
         dragInfo = { i, w, h, node };
         const { layout } = this.state;
         const { margin, containerPadding } = this.props;
@@ -278,7 +278,7 @@ export default class ReactGridLayout extends React.Component<Props, State> {
           h
         });
         if (!this.state.activeDrag) {
-          const l = { i, w, h, x, y };
+          const l = { i, w, h, x, y, ...data };
           this.setState({
             oldDragItem: l,
             oldLayout: layout,
@@ -291,7 +291,7 @@ export default class ReactGridLayout extends React.Component<Props, State> {
         }
       },
 
-      dragOut: ({ event }) => {
+      dragOut: () => {
         if (dragInfo) {
           const { i } = dragInfo;
           this.setState((state, props) => ({
@@ -637,15 +637,9 @@ export default class ReactGridLayout extends React.Component<Props, State> {
     return this.props.onResizeStop(layout, oldResizeItem, l, null, e, node);
   }
 
-  onResizeStart(
-    i: string,
-    w: number,
-    h: number,
-    { e, node, size }: GridResizeEvent
-  ) {
+  onResizeStart(i: string, w: number, h: number, { e, node }: GridResizeEvent) {
     const { layout } = this.state;
     var l = getLayoutItem(layout, i);
-    const placeholder = this.state.activeDrag;
     if (!l) return;
 
     this.setState({
