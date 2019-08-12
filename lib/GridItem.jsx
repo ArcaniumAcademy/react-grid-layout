@@ -286,7 +286,7 @@ export default class GridItem extends React.Component<Props, State> {
   }): { w: number, h: number } {
     const { margin, maxRows, cols, rowHeight, x, y } = this.props;
     const { onLeftHandle } = this.state;
-    const colWidth = this.calcColWidth();
+    const colWidth = calcColWidth(this.props);
 
     // width = colWidth * w - (margin * (w - 1))
     // ...
@@ -449,7 +449,7 @@ export default class GridItem extends React.Component<Props, State> {
           );
       }
 
-      const { x, y } = this.calcXY(position.top, position.left);
+      const { x, y } = calcXY(position.top, position.left, this.props);
       const { i } = this.props;
       return handler.call(this, i, x, y, { e, node, position });
     };
@@ -506,7 +506,11 @@ export default class GridItem extends React.Component<Props, State> {
       const { dragging } = this.state;
       switch (handlerName) {
         case "onResizeStart":
-          const { x: startX, y } = this.calcXY(position.top, position.left);
+          const { x: startX, y } = calcXY(
+            position.top,
+            position.left,
+            this.props
+          );
           const { w: startW } = this.calcWH({
             height: clientRect.height,
             width: clientRect.width
@@ -538,7 +542,7 @@ export default class GridItem extends React.Component<Props, State> {
           // Set left with capping
           const targetLeft = e.clientX - layoutRect.left + layout.scrollLeft;
           const minLeft = margin[0];
-          const maxLeft = (w - 1) * this.calcColWidth() + startingLeft;
+          const maxLeft = (w - 1) * calcColWidth(this.props) + startingLeft;
           position.left = Math.min(Math.max(targetLeft, minLeft), maxLeft);
 
           // Set width with capping
@@ -581,9 +585,10 @@ export default class GridItem extends React.Component<Props, State> {
           });
 
           // calculate snapped size and position
-          const { x: snapX, y: snapY } = this.calcXY(
+          const { x: snapX, y: snapY } = calcXY(
             dragging.top,
-            dragging.left
+            dragging.left,
+            this.props
           );
           const { w: snapW, h: snapH } = this.calcWH({
             height: clientRect.height,
