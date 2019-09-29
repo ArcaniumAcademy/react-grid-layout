@@ -707,40 +707,77 @@ var ReactGridLayout = (function(_React$Component) {
 
   ReactGridLayout.prototype.placeholder = function placeholder() {
     var activeDrag = this.state.activeDrag;
+    // if (!activeDrag) return null;
 
-    if (!activeDrag) return null;
     var _props6 = this.props,
       width = _props6.width,
       cols = _props6.cols,
+      layout = _props6.layout,
       margin = _props6.margin,
       containerPadding = _props6.containerPadding,
       rowHeight = _props6.rowHeight,
       maxRows = _props6.maxRows,
       useCSSTransforms = _props6.useCSSTransforms;
+    var _layout$minW = layout.minW,
+      minW = _layout$minW === undefined ? 1 : _layout$minW,
+      _layout$minH = layout.minH,
+      minH = _layout$minH === undefined ? 1 : _layout$minH;
 
-    // {...this.state.activeDrag} is pretty slow, actually
+    var rows =
+      layout.reduce(function(ac, widget) {
+        return widget.y > ac ? widget.y : ac;
+      }, 0) + 1;
 
-    return _react2.default.createElement(
-      _GridItem2.default,
-      {
-        w: activeDrag.w,
-        h: activeDrag.h,
-        x: activeDrag.x,
-        y: activeDrag.y,
-        i: activeDrag.i,
-        className: "react-grid-placeholder",
-        containerWidth: width,
-        cols: cols,
-        margin: margin,
-        containerPadding: containerPadding || margin,
-        maxRows: maxRows,
-        rowHeight: rowHeight,
-        isDraggable: false,
-        isResizable: false,
-        useCSSTransforms: useCSSTransforms
-      },
-      _react2.default.createElement("div", null)
-    );
+    var gridItems = [];
+    for (var row = 0; row < rows; row++) {
+      for (var col = 0; col < cols; col++) {
+        var hasDropHint =
+          !!activeDrag && col === activeDrag.x && row === activeDrag.y;
+        var gridProps = {
+          w: hasDropHint ? activeDrag.w : minW,
+          h: hasDropHint ? activeDrag.h : minH,
+          x: col,
+          y: row,
+          i: gridItems.length.toString(10), // was activeDrag.i
+          className: hasDropHint
+            ? "react-grid-drop-hint"
+            : "react-grid-placeholder",
+          containerWidth: width,
+          cols: cols,
+          // key: gridItems.length,
+          margin: margin,
+          containerPadding: containerPadding || margin,
+          maxRows: maxRows,
+          rowHeight: rowHeight,
+          isDraggable: false,
+          isResizable: false,
+          useCSSTransforms: useCSSTransforms
+        };
+        gridItems.push(gridProps);
+        /*<GridItem
+              w={hasDropHint ? activeDrag.w : minW}
+              h={hasDropHint ? activeDrag.h : minH}
+              x={col}
+              y={row}
+              i={gridItems.length} // was activeDrag.i
+              className={"react-grid-placeholder"} // hasDropHint ? "react-grid-drop-hint" : "react-grid-placeholder"}
+              containerWidth={width}
+              cols={cols}
+              // key={gridItems.length}
+              margin={margin}
+              containerPadding={containerPadding || margin}
+              maxRows={maxRows}
+              rowHeight={rowHeight}
+              isDraggable={false}
+              isResizable={false}
+              useCSSTransforms={useCSSTransforms}
+            >
+              <div />
+            </GridItem>*/
+        //)
+      }
+    }
+    return gridItems;
   };
 
   /**
@@ -833,18 +870,36 @@ var ReactGridLayout = (function(_React$Component) {
       style
     );
 
+    var placeholders = this.placeholder() || [];
+    console.log(placeholders);
     return _react2.default.createElement(
       "div",
       { className: mergedClassName, style: mergedStyle },
       _react2.default.Children.map(this.props.children, function(child) {
         return _this3.processGridItem(child);
       }),
-      this.placeholder()
+      !!placeholders.length &&
+        placeholders.map(function(props, key) {
+          return _react2.default.createElement(
+            _GridItem2.default,
+            _extends({ key: key }, props),
+            _react2.default.createElement("div", null)
+          );
+        })
     );
   };
 
   return ReactGridLayout;
 })(_react2.default.Component);
+/**
+ * 
+ * 
+ * (
+          placeholders.map((Placeholder, key) => (
+            <Fragment key={key}>{Placeholder}</Fragment>
+          ))
+        )}
+ */
 
 ReactGridLayout.displayName = "ReactGridLayout";
 ReactGridLayout.propTypes = {
