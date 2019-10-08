@@ -707,8 +707,8 @@ var ReactGridLayout = (function(_React$Component) {
 
   ReactGridLayout.prototype.placeholder = function placeholder() {
     var activeDrag = this.state.activeDrag;
-    // if (!activeDrag) return null;
 
+    if (!activeDrag) return null;
     var _props6 = this.props,
       width = _props6.width,
       cols = _props6.cols,
@@ -718,10 +718,6 @@ var ReactGridLayout = (function(_React$Component) {
       rowHeight = _props6.rowHeight,
       maxRows = _props6.maxRows,
       useCSSTransforms = _props6.useCSSTransforms;
-    var _layout$minW = layout.minW,
-      minW = _layout$minW === undefined ? 1 : _layout$minW,
-      _layout$minH = layout.minH,
-      minH = _layout$minH === undefined ? 1 : _layout$minH;
 
     var rows =
       layout.reduce(function(ac, widget) {
@@ -731,20 +727,20 @@ var ReactGridLayout = (function(_React$Component) {
     var gridItems = [];
     for (var row = 0; row < rows; row++) {
       for (var col = 0; col < cols; col++) {
-        var hasDropHint =
-          !!activeDrag && col === activeDrag.x && row === activeDrag.y;
-        var gridProps = {
-          w: hasDropHint ? activeDrag.w : minW,
-          h: hasDropHint ? activeDrag.h : minH,
+        var draggingIntoCol = col === activeDrag.x;
+        var draggingIntoRow = row === activeDrag.y;
+        var hasDropHint = !!activeDrag && draggingIntoCol && draggingIntoRow;
+        gridItems.push({
+          w: activeDrag.w,
+          h: activeDrag.h,
           x: col,
           y: row,
-          i: gridItems.length.toString(10), // was activeDrag.i
+          i: gridItems.length.toString(10),
           className: hasDropHint
             ? "react-grid-drop-hint"
             : "react-grid-placeholder",
           containerWidth: width,
           cols: cols,
-          // key: gridItems.length,
           margin: margin,
           containerPadding: containerPadding || margin,
           maxRows: maxRows,
@@ -752,31 +748,10 @@ var ReactGridLayout = (function(_React$Component) {
           isDraggable: false,
           isResizable: false,
           useCSSTransforms: useCSSTransforms
-        };
-        gridItems.push(gridProps);
-        /*<GridItem
-              w={hasDropHint ? activeDrag.w : minW}
-              h={hasDropHint ? activeDrag.h : minH}
-              x={col}
-              y={row}
-              i={gridItems.length} // was activeDrag.i
-              className={"react-grid-placeholder"} // hasDropHint ? "react-grid-drop-hint" : "react-grid-placeholder"}
-              containerWidth={width}
-              cols={cols}
-              // key={gridItems.length}
-              margin={margin}
-              containerPadding={containerPadding || margin}
-              maxRows={maxRows}
-              rowHeight={rowHeight}
-              isDraggable={false}
-              isResizable={false}
-              useCSSTransforms={useCSSTransforms}
-            >
-              <div />
-            </GridItem>*/
-        //)
+        });
       }
     }
+    // console.log(gridItems);
     return gridItems;
   };
 
@@ -871,7 +846,6 @@ var ReactGridLayout = (function(_React$Component) {
     );
 
     var placeholders = this.placeholder() || [];
-    console.log(placeholders);
     return _react2.default.createElement(
       "div",
       { className: mergedClassName, style: mergedStyle },
@@ -891,15 +865,6 @@ var ReactGridLayout = (function(_React$Component) {
 
   return ReactGridLayout;
 })(_react2.default.Component);
-/**
- * 
- * 
- * (
-          placeholders.map((Placeholder, key) => (
-            <Fragment key={key}>{Placeholder}</Fragment>
-          ))
-        )}
- */
 
 ReactGridLayout.displayName = "ReactGridLayout";
 ReactGridLayout.propTypes = {

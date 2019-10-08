@@ -82,8 +82,8 @@ class AddRemoveLayout extends React.PureComponent {
         i: "n" + this.state.newCounter,
         x: (this.state.items.length * 2) % (this.state.cols || 12),
         y: Infinity, // puts it at the bottom
-        w: 2,
-        h: 2
+        w: 1,
+        h: 1
       }),
       // Increment the counter to ensure key is always unique.
       newCounter: this.state.newCounter + 1
@@ -126,8 +126,8 @@ class AddRemoveLayout extends React.PureComponent {
       } else {
         this.dragApi.value.dragIn({
           i: "n" + this.state.newCounter,
-          w: 2,
-          h: 2,
+          w: 1,
+          h: 1,
           event,
           node,
           position: {
