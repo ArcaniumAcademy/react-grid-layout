@@ -757,7 +757,6 @@ export default class ReactGridLayout extends React.Component<Props, State> {
       0
     );
 
-    console.log(rows);
     const gridItems = [];
     for (let row = 0; row < rows; row++) {
       for (let col = 0; col < cols; col++) {
