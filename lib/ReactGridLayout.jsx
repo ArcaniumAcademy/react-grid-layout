@@ -754,9 +754,10 @@ export default class ReactGridLayout extends React.Component<Props, State> {
     } = this.props;
     const rows = Math.max(
       layout.reduce(
-        (ac, widget) => (widget.y + widget.h + 1 > ac ? widget.y + widget.h + 1 : ac),
+        (ac, widget) =>
+          widget.y + widget.h + 1 > ac ? widget.y + widget.h + 1 : ac,
         2
-      ), 
+      ),
       activeDrag ? activeDrag.y + 1 : 2
     );
 
