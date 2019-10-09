@@ -19,7 +19,7 @@ class AddRemoveLayout extends React.PureComponent {
     super(props);
 
     this.state = {
-      items: [],/*[0, 1, 2, 3, 4].map(function(i, key, list) {
+      items: [] /*[0, 1, 2, 3, 4].map(function(i, key, list) {
         return {
           i: i.toString(),
           x: i * 2,
@@ -28,7 +28,7 @@ class AddRemoveLayout extends React.PureComponent {
           h: 2,
           add: i === (list.length - 1).toString()
         };
-      }),*/
+      }),*/,
       newCounter: 0,
       placeholderPosition: { x: 0, y: 0 }
     };
