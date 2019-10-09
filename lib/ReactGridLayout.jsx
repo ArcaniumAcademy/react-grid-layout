@@ -741,7 +741,7 @@ export default class ReactGridLayout extends React.Component<Props, State> {
    */
   placeholder(): ?ReactElement<any> {
     const { activeDrag } = this.state;
-    if (!activeDrag) return null;
+    // if (!activeDrag) return null;
     const {
       width,
       cols,
@@ -756,17 +756,17 @@ export default class ReactGridLayout extends React.Component<Props, State> {
       layout.reduce(
         (ac, widget) =>
           widget.y + widget.h + 1 > ac ? widget.y + widget.h + 1 : ac,
-        2
+        1
       ),
-      activeDrag ? activeDrag.y + 1 : 2
+      activeDrag ? activeDrag.y + 1 : 1
     );
 
     const gridItems = [];
     for (let row = 0; row < rows; row++) {
       for (let col = 0; col < cols; col++) {
-        const draggingIntoCol = col === activeDrag.x;
-        const draggingIntoRow = row === activeDrag.y;
-        const hasDropHint = !!activeDrag && draggingIntoCol && draggingIntoRow;
+        const draggingIntoCol = !!activeDrag && col === activeDrag.x;
+        const draggingIntoRow = !!activeDrag && row === activeDrag.y;
+        const hasDropHint = draggingIntoCol && draggingIntoRow;
         gridItems.push({
           w: hasDropHint ? activeDrag.w : 1,
           h: hasDropHint ? activeDrag.h : 1,

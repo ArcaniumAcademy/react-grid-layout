@@ -539,8 +539,8 @@ var ReactGridLayout = function (_React$Component) {
 
   ReactGridLayout.prototype.placeholder = function placeholder() {
     var activeDrag = this.state.activeDrag;
+    // if (!activeDrag) return null;
 
-    if (!activeDrag) return null;
     var _props6 = this.props,
         width = _props6.width,
         cols = _props6.cols,
@@ -553,14 +553,14 @@ var ReactGridLayout = function (_React$Component) {
 
     var rows = Math.max(layout.reduce(function (ac, widget) {
       return widget.y + widget.h + 1 > ac ? widget.y + widget.h + 1 : ac;
-    }, 2), activeDrag ? activeDrag.y + 1 : 2);
+    }, 1), activeDrag ? activeDrag.y + 1 : 1);
 
     var gridItems = [];
     for (var row = 0; row < rows; row++) {
       for (var col = 0; col < cols; col++) {
-        var draggingIntoCol = col === activeDrag.x;
-        var draggingIntoRow = row === activeDrag.y;
-        var hasDropHint = !!activeDrag && draggingIntoCol && draggingIntoRow;
+        var draggingIntoCol = !!activeDrag && col === activeDrag.x;
+        var draggingIntoRow = !!activeDrag && row === activeDrag.y;
+        var hasDropHint = draggingIntoCol && draggingIntoRow;
         gridItems.push({
           w: hasDropHint ? activeDrag.w : 1,
           h: hasDropHint ? activeDrag.h : 1,
