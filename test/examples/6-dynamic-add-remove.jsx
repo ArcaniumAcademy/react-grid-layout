@@ -170,6 +170,7 @@ class AddRemoveLayout extends React.PureComponent {
         </Draggable>
         <div ref={node => (this.container = node)}>
           <ResponsiveReactGridLayout
+            compactType={null}
             dragApiRef={this.dragApi}
             onLayoutChange={this.onLayoutChange}
             onBreakpointChange={this.onBreakpointChange}

@@ -752,9 +752,12 @@ export default class ReactGridLayout extends React.Component<Props, State> {
       maxRows,
       useCSSTransforms
     } = this.props;
-    const rows = layout.reduce(
-      (ac, widget) => (widget.y + widget.h > ac ? widget.y + widget.h : ac),
-      0
+    const rows = Math.max(
+      layout.reduce(
+        (ac, widget) => (widget.y + widget.h + 1 > ac ? widget.y + widget.h + 1 : ac),
+        2
+      ), 
+      activeDrag ? activeDrag.y + 1 : 2
     );
 
     const gridItems = [];
@@ -764,8 +767,8 @@ export default class ReactGridLayout extends React.Component<Props, State> {
         const draggingIntoRow = row === activeDrag.y;
         const hasDropHint = !!activeDrag && draggingIntoCol && draggingIntoRow;
         gridItems.push({
-          w: 1,
-          h: 1,
+          w: hasDropHint ? activeDrag.w : 1,
+          h: hasDropHint ? activeDrag.h : 1,
           x: col,
           y: row,
           i: gridItems.length.toString(10),
